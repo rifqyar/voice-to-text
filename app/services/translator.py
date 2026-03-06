@@ -9,7 +9,6 @@ def safe_translate(text: str, src_lang: str, dest_lang: str):
         src_lang_norm = normalize_lang_code(src_lang)
         dest_lang_norm = normalize_lang_code(dest_lang)
 
-        # deep-translator otomatis handle 'auto' detect
         translator = GoogleTranslator(source=src_lang_norm or 'auto', target=dest_lang_norm)
         translated = translator.translate(text)
 
@@ -17,5 +16,5 @@ def safe_translate(text: str, src_lang: str, dest_lang: str):
         return translated
 
     except Exception as e:
-        print(f"⚠️ Translate failed ({src_lang}→{dest_lang}): {e}")
+        print(f"⚠️ Translate failed: {e}")
         return text

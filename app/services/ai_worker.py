@@ -5,10 +5,13 @@ from app.core.config import MODEL_SIZE, DEVICE, COMPUTE_TYPE, MAX_GPU_PROCESSES
 from app.services.notifier import notify
 from app.services.translator import safe_translate
 
-# Langsung load ke RTX 5090 pas server nyala!
-print(f"🚀 Loading Whisper '{MODEL_SIZE}' on {DEVICE.upper()} with {COMPUTE_TYPE}...")
-model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
 gpu_semaphore = asyncio.Semaphore(MAX_GPU_PROCESSES)
+
+BLUE = "\033[94m"
+RESET = "\033[0m"
+
+print(f"{BLUE}🚀 Loading Whisper '{MODEL_SIZE}' on {DEVICE.upper()} with VAD Filter...{RESET}")
+model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
 
 async def send_heartbeat(job_id: str):
     try:
@@ -26,19 +29,27 @@ async def process_file(filepath: str, job_id: str, input_lang: str, output_lang:
         
         # Masuk Gembok Antrean GPU
         async with gpu_semaphore:
+            print(f"{BLUE}[{job_id}] Memulai transkripsi akurasi tinggi...{RESET}")
             await notify(job_id, {"status": "transcribing"})
+           
             segments, info = await asyncio.to_thread(
-                model.transcribe, filepath, language=input_lang if input_lang else None, beam_size=5
+                model.transcribe, 
+                filepath, 
+                language=input_lang if input_lang else None, 
+                beam_size=5,
+                vad_filter=True, 
+                vad_parameters=dict(min_silence_duration_ms=500),
+                condition_on_previous_text=False
             )
         
-        original_text = "".join([segment.text for segment in segments]).strip()
-        detected_lang = info.language
+            original_text = "".join([segment.text for segment in segments]).strip()
+            detected_lang = info.language
 
         await notify(job_id, {"status": "translating"})
         translated_text = ""
         if original_text:
             translated_text = await asyncio.to_thread(
-                safe_translate, original_text, input_lang, output_lang
+                safe_translate, original_text, detected_lang, output_lang
             )
 
         await notify(job_id, {
