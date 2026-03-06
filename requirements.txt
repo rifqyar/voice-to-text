@@ -6,3 +6,4 @@ deep-translator
 python-dotenv
 ctranslate2
 transformers
+torch
