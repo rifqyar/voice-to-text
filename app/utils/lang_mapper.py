@@ -4,8 +4,8 @@ def normalize_lang_code(lang: str) -> str:
     lang = lang.lower()
 
     if lang in ["zh", "zh-hans", "zh-cn"]:
-        return "zh-cn"
+        return "zh-CN"
     if lang in ["zh-hant", "zh-tw"]:
-        return "zh-tw"
+        return "zh-TW"
 
     return lang
